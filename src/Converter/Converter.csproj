@@ -83,6 +83,7 @@
     <Compile Include="Methods\Column.cs" />
     <Compile Include="Types\Component.cs" />
     <Compile Include="Methods\GeneratedBy.cs" />
+    <Compile Include="Types\CompositeElement.cs" />
     <Compile Include="Types\Id.cs" />
     <Compile Include="Methods\ICommonMapMethod.cs" />
     <Compile Include="Types\IMapStart.cs" />

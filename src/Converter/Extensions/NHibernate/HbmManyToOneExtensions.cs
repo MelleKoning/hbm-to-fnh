@@ -10,6 +10,7 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
 			{
 				return true;
 			}
+            return false;
 			HbmColumn column = item.Column();
 			if (column == null)
 			{
@@ -48,7 +49,7 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
 			{
 				return item.index;
 			}
-			return item.Column().GetUniqueIndex();
+		    return null;
 		}
 
 		public static string GetPropertyName(this HbmManyToOne item)
@@ -67,12 +68,12 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
 			{
 				return !item.notnull;
 			}
-			return item.Column().CanBeNull();
+		    return item.notnull;
 		}
 
 		public static string GetColumnName(this HbmManyToOne item)
 		{
-			return item.Column().name;
+			return item.column;
 		}
 
 		private static HbmColumn Column(this HbmManyToOne item)

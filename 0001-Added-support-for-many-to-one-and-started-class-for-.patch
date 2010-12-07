@@ -1,0 +1,135 @@
+From 9257f98b3e3b4d37dcc9b2141652ad8e9442ddb4 Mon Sep 17 00:00:00 2001
+From: MelleKoning <hace_x@yahoo.com>
+Date: Tue, 7 Dec 2010 14:47:11 +0100
+Subject: [PATCH] Added support for many-to-one and started class for CompositeElement.cs
+
+---
+ src/Converter/Converter.csproj                     |    1 +
+ .../NHibernate/HbmManyToOneExtensions.cs           |    7 +-
+ src/Converter/Types/CompositeElement.cs            |   66 ++++++++++++++++++++
+ 3 files changed, 71 insertions(+), 3 deletions(-)
+ create mode 100644 src/Converter/Types/CompositeElement.cs
+
+diff --git a/src/Converter/Converter.csproj b/src/Converter/Converter.csproj
+index e41c976..4c0bd78 100644
+--- a/src/Converter/Converter.csproj
++++ b/src/Converter/Converter.csproj
+@@ -83,6 +83,7 @@
+     <Compile Include="Methods\Column.cs" />
+     <Compile Include="Types\Component.cs" />
+     <Compile Include="Methods\GeneratedBy.cs" />
++    <Compile Include="Types\CompositeElement.cs" />
+     <Compile Include="Types\Id.cs" />
+     <Compile Include="Methods\ICommonMapMethod.cs" />
+     <Compile Include="Types\IMapStart.cs" />
+diff --git a/src/Converter/Extensions/NHibernate/HbmManyToOneExtensions.cs b/src/Converter/Extensions/NHibernate/HbmManyToOneExtensions.cs
+index 1167fe3..4a58113 100644
+--- a/src/Converter/Extensions/NHibernate/HbmManyToOneExtensions.cs
++++ b/src/Converter/Extensions/NHibernate/HbmManyToOneExtensions.cs
+@@ -10,6 +10,7 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
+ 			{
+ 				return true;
+ 			}
++            return false;
+ 			HbmColumn column = item.Column();
+ 			if (column == null)
+ 			{
+@@ -48,7 +49,7 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
+ 			{
+ 				return item.index;
+ 			}
+-			return item.Column().GetUniqueIndex();
++		    return null;
+ 		}
+ 
+ 		public static string GetPropertyName(this HbmManyToOne item)
+@@ -67,12 +68,12 @@ namespace NHibernateHbmToFluent.Converter.Extensions.NHibernate
+ 			{
+ 				return !item.notnull;
+ 			}
+-			return item.Column().CanBeNull();
++		    return item.notnull;
+ 		}
+ 
+ 		public static string GetColumnName(this HbmManyToOne item)
+ 		{
+-			return item.Column().name;
++			return item.column;
+ 		}
+ 
+ 		private static HbmColumn Column(this HbmManyToOne item)
+diff --git a/src/Converter/Types/CompositeElement.cs b/src/Converter/Types/CompositeElement.cs
+new file mode 100644
+index 0000000..8e1b266
+--- /dev/null
++++ b/src/Converter/Types/CompositeElement.cs
+@@ -0,0 +1,66 @@
++﻿using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Text;
++
++using NHibernate.Cfg.MappingSchema;
++using NHibernateHbmToFluent.Converter.Extensions;
++
++namespace NHibernateHbmToFluent.Converter.Types
++{
++    public class CompositeElement
++    {
++        private readonly CodeFileBuilder _builder;
++
++		public CompositeElement(CodeFileBuilder builder)
++		{
++			_builder = builder;
++		}
++
++		public void Start(string prefix, MappedPropertyInfo item)
++		{
++			CodeFileBuilder componentBuilder = new CodeFileBuilder();
++			componentBuilder.Indent(5);
++			const string subPrefix = "y.";
++			HbmCompositeElement component = item.HbmObject<HbmCompositeElement>();
++			componentBuilder.AddLine("");
++
++			var componentBodyBuilder = new ClassMapBody(componentBuilder);
++			foreach (var componentPart in component.Items)
++			{
++				componentBodyBuilder.Add(subPrefix, new MappedPropertyInfo(componentPart, item.FileName));
++			}
++			_builder.StartMethod(prefix, string.Format("{0}<{1}>(x => x.{2}, y=>", FluentNHibernateNames.CompositeElement, item.ReturnType, item.Name));
++			_builder.AddLine("{");
++			_builder.AddLine(componentBuilder.ToString());
++			_builder.AddLine("})");
++			/*if (component. )
++			{
++				_builder.AddLine(string.Format(".{0}()", FluentNHibernateNames.Insert));
++			}
++			if (component.update)
++			{
++				_builder.AddLine(string.Format(".{0}()", FluentNHibernateNames.Update));
++			}*/
++		}
++
++		public static class FluentNHibernateNames
++		{
++			public static string CompositeElement // is using same name as Component in fluent
++			{
++				get { return ReflectionUtility.GetMethodName((FakeMap f) => f.Component(x => x, null)); }
++			}
++
++			public static string Insert
++			{
++				get { return ReflectionUtility.GetMethodName((FakeMap f) => f.Component(x => x, null).Insert()); }
++			}
++
++			public static string Update
++			{
++				get { return ReflectionUtility.GetMethodName((FakeMap f) => f.Component(x => x, null).Update()); }
++			}
++		}
++	}
++}
++
+-- 
+1.7.3.1.msysgit.0
+
